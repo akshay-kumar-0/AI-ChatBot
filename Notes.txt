@@ -1,0 +1,413 @@
+====================================================
+MONGOOSE: STATICS vs METHODS (Password Hashing)
+====================================================
+
+----------------------------------------------------
+1. CODE EXAMPLES
+----------------------------------------------------
+
+STATIC METHOD (Model-level)
+----------------------------------------------------
+userSchema.statics.hashPassword = async function (password) {
+    const salt = await bcrypt.genSalt(10);
+    return await bcrypt.hash(password, salt);
+};
+----------------------------------------------------
+
+INSTANCE METHOD (Document-level)
+----------------------------------------------------
+userSchema.methods.hashPassword = async function (password) {
+    const salt = await bcrypt.genSalt(10);
+    return await bcrypt.hash(password, salt);
+};
+----------------------------------------------------
+
+----------------------------------------------------
+2. CORE DIFFERENCE
+----------------------------------------------------
+
+statics:
+- Belongs to the Model (User)
+- Does NOT depend on a specific document
+
+methods:
+- Belongs to a Document (user instance)
+- Depends on a specific user
+
+----------------------------------------------------
+3. HOW THEY ARE CALLED (VERY IMPORTANT)
+----------------------------------------------------
+
+STATIC METHOD CALL
+----------------------------------------------------
+User.hashPassword("mypassword");
+----------------------------------------------------
+
+- Called on the User model
+- No user instance required
+
+INSTANCE METHOD CALL
+----------------------------------------------------
+const user = new User();
+user.hashPassword("mypassword");
+----------------------------------------------------
+
+- Called on a specific user document
+- Has access to "this" (user data)
+
+----------------------------------------------------
+4. DIAGRAM-BASED EXPLANATION
+----------------------------------------------------
+
+STATIC METHOD FLOW
+----------------------------------------------------
+Controller
+    |
+    v
+User.hashPassword(password)
+    |
+    v
+Hashed Password Returned
+    |
+    v
+User.create() / update flow
+----------------------------------------------------
+
+INSTANCE METHOD FLOW
+----------------------------------------------------
+User Document (this)
+    |
+    v
+user.hashPassword(password)
+    |
+    v
+Can access this.email, this.password
+----------------------------------------------------
+
+----------------------------------------------------
+5. KEY DIFFERENCES TABLE
+----------------------------------------------------
+
+Feature Comparison:
+
+statics:
+- Belongs to Model (User)
+- No user instance needed
+- Utility logic
+- Used before user creation
+
+methods:
+- Belongs to Document (user)
+- User instance required
+- Document-specific logic
+- Uses "this"
+
+----------------------------------------------------
+6. WHICH ONE TO USE FOR PASSWORD HASHING?
+----------------------------------------------------
+
+BEST PRACTICE: STATIC METHOD
+
+Reasons:
+- Password hashing does not depend on a user instance
+- Cleaner and reusable
+- Easy to test
+- Used before user creation
+
+Recommended Usage:
+----------------------------------------------------
+User.hashPassword(password);
+----------------------------------------------------
+
+----------------------------------------------------
+7. WHY INSTANCE METHOD IS NOT IDEAL FOR HASHING
+----------------------------------------------------
+
+Problems:
+- Requires creating a user instance first
+- Password hashing is not user-specific logic
+- Can confuse design and responsibility
+
+----------------------------------------------------
+8. REAL-WORLD INDUSTRY PATTERN
+----------------------------------------------------
+
+Static → Hash Password
+Method → Compare Password
+
+----------------------------------------------------
+STATIC METHOD
+----------------------------------------------------
+userSchema.statics.hashPassword = async function (password) {
+    return bcrypt.hash(password, 10);
+};
+----------------------------------------------------
+
+INSTANCE METHOD
+----------------------------------------------------
+userSchema.methods.comparePassword = async function (password) {
+    return bcrypt.compare(password, this.password);
+};
+----------------------------------------------------
+
+This pattern is widely used in production systems.
+
+----------------------------------------------------
+9. INTERVIEW-PERFECT ANSWER
+----------------------------------------------------
+
+"Static methods belong to the model and are used for utility
+logic like hashing passwords before user creation. Instance
+methods belong to a document and are used when logic depends
+on user-specific data, such as comparing a login password
+with the stored hash."
+
+----------------------------------------------------
+10. RESUME LINE (OPTIONAL)
+----------------------------------------------------
+
+Implemented secure authentication using Mongoose static and
+instance methods for password hashing and verification.
+
+----------------------------------------------------
+11. SUMMARY
+----------------------------------------------------
+
+- statics → model-level, reusable, utility logic
+- methods → document-level, user-specific logic
+- Hashing → static method
+- Comparison → instance method
+
+====================================================
+END OF NOTES
+====================================================
+
+# --------------------------------------------------------------------------------
+
+====================================================
+MONGOOSE: PRE-SAVE MIDDLEWARE vs STATIC METHODS
+====================================================
+
+----------------------------------------------------
+1. PRE-SAVE MIDDLEWARE
+----------------------------------------------------
+
+Definition:
+Pre-save middleware is a Mongoose hook that runs
+automatically before a document is saved to MongoDB.
+
+It is mainly used for mandatory logic like password hashing.
+
+Example:
+----------------------------------------------------
+userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next();
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+});
+----------------------------------------------------
+
+How it works:
+- "this" refers to the current document (user).
+- Automatically triggers on:
+  - user.save()
+  - User.create()
+
+----------------------------------------------------
+DIAGRAM (Pre-save Middleware Flow)
+----------------------------------------------------
+
+Client Request
+     |
+     v
+Controller (register user)
+     |
+     v
+User.create({ email, password })
+     |
+     v
+PRE-SAVE MIDDLEWARE
+(password gets hashed automatically)
+     |
+     v
+MongoDB (hashed password stored)
+
+----------------------------------------------------
+
+Advantages:
+- Automatic execution (cannot forget hashing).
+- Cleaner controllers.
+- Security by default.
+- Industry standard practice.
+
+Disadvantages:
+- Does NOT run on:
+  - updateOne()
+  - findOneAndUpdate()
+- Less control in complex logic.
+- Hidden execution (not explicit).
+
+Best Use Case:
+- User registration
+- Mandatory security operations
+
+----------------------------------------------------
+2. STATIC METHODS
+----------------------------------------------------
+
+Definition:
+Static methods are model-level functions used for reusable
+utility logic that does not depend on a specific document.
+
+Example:
+----------------------------------------------------
+userSchema.statics.hashPassword = async function (password) {
+    return bcrypt.hash(password, 10);
+};
+----------------------------------------------------
+
+How it works:
+- Called directly on the model.
+- Example:
+  User.hashPassword("mypassword");
+
+----------------------------------------------------
+DIAGRAM (Static Method Flow)
+----------------------------------------------------
+
+Client Request
+     |
+     v
+Controller Logic
+     |
+     v
+User.hashPassword(password)
+     |
+     v
+Hashed Password Returned
+     |
+     v
+User.updateOne() / save() / reset flow
+
+----------------------------------------------------
+
+Advantages:
+- Explicit and readable logic.
+- Full control over execution.
+- Works in all flows.
+- Easy to test and reuse.
+
+Disadvantages:
+- Manual call required.
+- Can be forgotten.
+- Responsibility on developer.
+
+Best Use Case:
+- Password reset
+- Admin updates
+- Utility helpers
+
+----------------------------------------------------
+3. KEY DIFFERENCES
+----------------------------------------------------
+
+Feature Comparison:
+
+Pre-save Middleware:
+- Automatic execution
+- Document-level (this)
+- Runs only on save/create
+- Best for default security
+
+Static Method:
+- Manual execution
+- Model-level
+- Works everywhere
+- Best for flexibility
+
+----------------------------------------------------
+4. BEST PRACTICE (REAL-WORLD)
+----------------------------------------------------
+
+Most production applications use BOTH:
+
+- Pre-save middleware:
+  Acts as a safety net.
+
+- Static methods:
+  Used for custom and advanced flows.
+
+----------------------------------------------------
+COMBINED DIAGRAM (Best Practice)
+----------------------------------------------------
+
+User Registration:
+Controller → User.create()
+                ↓
+         Pre-save Middleware
+                ↓
+             MongoDB
+
+Password Reset:
+Controller → Static Method
+                ↓
+           Hashed Password
+                ↓
+             Update DB
+
+----------------------------------------------------
+5. INTERVIEW QUESTIONS & ANSWERS
+----------------------------------------------------
+
+Q1. What is pre-save middleware?
+Ans:
+It is a Mongoose hook that runs automatically before saving
+a document, commonly used for password hashing.
+
+Q2. Why is pre-save middleware preferred for passwords?
+Ans:
+Because it ensures passwords are always hashed automatically,
+even if the developer forgets to do it manually.
+
+Q3. What are static methods in Mongoose?
+Ans:
+Static methods are model-level functions used for reusable
+utility logic that does not depend on a document instance.
+
+Q4. Why not use pre-save middleware for password updates?
+Ans:
+Because pre-save hooks do not run on updateOne or
+findOneAndUpdate operations.
+
+Q5. When should static methods be used?
+Ans:
+For password reset, admin updates, and flexible hashing logic.
+
+Q6. Can we use both together?
+Ans:
+Yes, using both provides security by default and flexibility
+for advanced flows.
+
+Q7. Which one is better?
+Ans:
+Neither is better alone; both serve different purposes.
+
+----------------------------------------------------
+6. INTERVIEW ONE-LINER
+----------------------------------------------------
+
+"Pre-save middleware ensures automatic password hashing during
+save operations, while static methods provide explicit and
+flexible control in advanced authentication flows."
+
+----------------------------------------------------
+7. SUMMARY
+----------------------------------------------------
+
+- Pre-save middleware → automatic, safe, default
+- Static methods → manual, flexible, reusable
+- Using both → best production practice
+
+====================================================
+END OF NOTES
+====================================================

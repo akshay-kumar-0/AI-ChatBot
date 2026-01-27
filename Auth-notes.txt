@@ -1,0 +1,183 @@
+====================================================
+MASTER AUTH NOTES (MERN STACK) – SHORT VERSION
+====================================================
+
+----------------------------------------------------
+1. PASSWORD HASHING (bcrypt)
+----------------------------------------------------
+
+Purpose:
+Passwords must never be stored in plain text.
+bcrypt provides hashing + salting for security.
+
+Example:
+----------------------------------------------------
+bcrypt.hash(password, 10);
+----------------------------------------------------
+
+----------------------------------------------------
+2. MONGOOSE: STATICS vs METHODS
+----------------------------------------------------
+
+STATICS (Model-level):
+- Called on Model (User)
+- No user instance needed
+- Best for utility logic
+
+Example:
+----------------------------------------------------
+User.hashPassword(password);
+----------------------------------------------------
+
+METHODS (Document-level):
+- Called on user instance
+- Has access to "this"
+- Best for user-specific logic
+
+Example:
+----------------------------------------------------
+user.comparePassword(password);
+----------------------------------------------------
+
+Best Practice:
+- Static → hash password
+- Method → compare password
+
+----------------------------------------------------
+3. PRE-SAVE MIDDLEWARE
+----------------------------------------------------
+
+Purpose:
+Automatically runs before saving a document.
+
+Example:
+----------------------------------------------------
+userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next();
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+});
+----------------------------------------------------
+
+Pros:
+- Automatic security
+- Cleaner controllers
+
+Cons:
+- Does not run on updateOne()
+
+----------------------------------------------------
+4. AUTH FLOW (LOGIN & REGISTER)
+----------------------------------------------------
+
+REGISTER FLOW:
+Client → Controller → Hash Password → Save User → Success
+
+LOGIN FLOW:
+Client → Find User → Compare Password → Generate Tokens
+
+----------------------------------------------------
+5. JWT (JSON WEB TOKEN)
+----------------------------------------------------
+
+Purpose:
+Stateless authentication mechanism.
+
+Token Contains:
+- User ID
+- Role (optional)
+- Expiry time
+
+Example:
+----------------------------------------------------
+jwt.sign({ id: user._id }, SECRET, { expiresIn: "15m" });
+----------------------------------------------------
+
+Pros:
+- Stateless
+- Fast
+- Scalable
+
+----------------------------------------------------
+6. ACCESS TOKEN
+----------------------------------------------------
+
+Purpose:
+Used to access protected APIs.
+
+Features:
+- Short-lived (10–15 min)
+- Sent in Authorization header
+
+Format:
+----------------------------------------------------
+Authorization: Bearer <access_token>
+----------------------------------------------------
+
+----------------------------------------------------
+7. REFRESH TOKEN
+----------------------------------------------------
+
+Purpose:
+Generate new access tokens without re-login.
+
+Features:
+- Long-lived (7–30 days)
+- Stored securely (HTTP-only cookie or DB)
+
+Flow:
+----------------------------------------------------
+Access Token Expired
+        ↓
+Send Refresh Token
+        ↓
+Verify Refresh Token
+        ↓
+New Access Token Issued
+----------------------------------------------------
+
+----------------------------------------------------
+8. TOKEN FLOW DIAGRAM
+----------------------------------------------------
+
+Login
+  ↓
+Access Token (short)
+Refresh Token (long)
+  ↓
+Access token expires
+  ↓
+Refresh token → new access token
+
+----------------------------------------------------
+9. LOGOUT FLOW
+----------------------------------------------------
+
+Steps:
+- Delete refresh token from DB
+- Clear cookies (if used)
+- User logged out securely
+
+----------------------------------------------------
+10. INTERVIEW ONE-LINERS
+----------------------------------------------------
+
+- bcrypt is slow by design to prevent brute-force attacks.
+- JWT enables stateless authentication.
+- Refresh tokens improve security and user experience.
+- Static methods are for utility logic; methods are for document logic.
+- Pre-save middleware ensures automatic password hashing.
+
+----------------------------------------------------
+11. SUMMARY
+----------------------------------------------------
+
+- Hash passwords using bcrypt
+- Use statics for hashing
+- Use methods for comparison
+- Use JWT for auth
+- Use refresh tokens for session longevity
+
+====================================================
+END OF MASTER AUTH NOTES
+====================================================
