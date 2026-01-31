@@ -1,0 +1,131 @@
+====================================================
+REDIS – QUICK NOTES
+====================================================
+
+----------------------------------------------------
+1. WHAT IS REDIS?
+----------------------------------------------------
+
+Redis (Remote Dictionary Server) is an
+in-memory data store used as:
+- Cache
+- Session store
+- Message broker
+
+It is extremely fast because data is stored in RAM.
+
+----------------------------------------------------
+2. WHY USE REDIS?
+----------------------------------------------------
+
+- Faster than database queries
+- Reduces database load
+- Improves application performance
+- Useful for real-time systems
+
+----------------------------------------------------
+3. COMMON USE CASES
+----------------------------------------------------
+
+- Caching API responses
+- Storing user sessions
+- Rate limiting
+- Real-time chat counters
+- Token / OTP storage
+
+----------------------------------------------------
+4. DATA STRUCTURES
+----------------------------------------------------
+
+Redis supports:
+- String
+- List
+- Set
+- Hash
+- Sorted Set
+
+Most common:
+- String → tokens, counters
+- Hash → user sessions
+
+----------------------------------------------------
+5. BASIC REDIS FLOW (CACHE)
+----------------------------------------------------
+
+Client Request
+     |
+     v
+Check Redis Cache
+     |
+     |-- Found → Return Data
+     |
+     |-- Not Found
+            |
+            v
+        Database
+            |
+            v
+        Save to Redis
+            |
+            v
+        Return Data
+
+----------------------------------------------------
+6. TTL (TIME TO LIVE)
+----------------------------------------------------
+
+TTL defines how long data stays in Redis.
+
+Example:
+----------------------------------------------------
+SET key value EX 60   // expires in 60 seconds
+----------------------------------------------------
+
+Used for:
+- OTP expiry
+- Session expiry
+- Cache invalidation
+
+----------------------------------------------------
+7. REDIS IN MERN (COMMON)
+----------------------------------------------------
+
+- Store refresh tokens
+- Cache frequently used APIs
+- Track login attempts
+- Rate limiting
+
+----------------------------------------------------
+8. REDIS vs DATABASE
+----------------------------------------------------
+
+Redis:
+- In-memory
+- Very fast
+- Temporary data
+
+Database:
+- Disk-based
+- Slower
+- Permanent data
+
+----------------------------------------------------
+9. INTERVIEW ONE-LINERS
+----------------------------------------------------
+
+- Redis is an in-memory key-value store.
+- Used for caching and performance optimization.
+- TTL helps auto-delete data.
+- Reduces database load.
+- Ideal for real-time applications.
+
+----------------------------------------------------
+10. RESUME LINE (OPTIONAL)
+----------------------------------------------------
+
+Improved backend performance by integrating Redis
+for caching and session management.
+
+====================================================
+END OF NOTES
+====================================================
