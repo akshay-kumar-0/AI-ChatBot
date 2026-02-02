@@ -16,6 +16,8 @@ export const createUserController = async (req, res)=>{
 
         const token = await user.generateJWT();
 
+        delete user._doc.password; //. removing password from the user object before sending response
+        
         res.status(201).json({ user, token});
     } catch (error) {
         res.status(400).send(error.message)
@@ -48,6 +50,7 @@ export const loginUserController = async(req, res) =>{
 
         const token = await user.generateJWT();
 
+        delete user._doc.password; //. removing password from the user object before sending response
         res.status(200).json({user,token});
     } catch (error) {
         res.status(400).send(error.message);
